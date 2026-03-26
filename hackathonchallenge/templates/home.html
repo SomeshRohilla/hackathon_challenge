@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+{% block content %}
+{% load static %}
+
+<style>
+.card {
+    padding: 20px;
+    border-radius: 16px;
+    background: linear-gradient(145deg, #0f172a, #020617);
+    color: white;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+    transition: transform 0.2s ease;
+}
+.card:hover {
+    transform: translateY(-5px);
+}
+
+h3 { margin-bottom: 15px; }
+
+/* 🔥 Chart Fix */
+.chart-container {
+    height: 400px;
+    width: 100%;
+}
+
+.big-chart {
+    height: 500px;
+}
+</style>
+
+<div id="alertBox"></div>
+
+<!-- ================= KPI ================= -->
+<div class="container mb-4">
+    <div class="row g-4 justify-content-center">
+
+        <div class="col-6 col-md-3">
+            <div class="card text-center h-100">
+                <h5>📦 Current Stock</h5>
+                <h2 id="kpiStock">--</h2>
+            </div>
+        </div>
+
+        <div class="col-6 col-md-3">
+            <div class="card text-center h-100">
+                <h5>📈 Next 7 Days Demand</h5>
+                <h2 id="kpiDemand">--</h2>
+            </div>
+        </div>
+
+        <div class="col-6 col-md-3">
+            <div class="card text-center h-100">
+                <h5>⚠️ Risk Level</h5>
+                <h2 id="kpiRisk">--</h2>
+            </div>
+        </div>
+
+        <div class="col-6 col-md-3">
+            <div class="card text-center h-100">
+                <h5>🧠 AI Decision</h5>
+                <h2 id="kpiDecision">--</h2>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ================= CHARTS ================= -->
+<div class="container">
+    <div class="row g-4">
+
+        <!-- 7 Days -->
+        <div class="col-12">
+            <div class="card">
+                <h3>Next 7 Days</h3>
+                <div class="chart-container">
+                    <canvas id="chart7"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 30 Days -->
+        <div class="col-12">
+            <div class="card">
+                <h3>Next 30 Days</h3>
+                <div class="chart-container">
+                    <canvas id="chart30"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 1 Year -->
+        <div class="col-12">
+            <div class="card">
+                <h3>Next 1 Year</h3>
+                <div class="chart-container big-chart">
+                    <canvas id="chart365"></canvas>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+
+// ✅ Prevent multiple API calls
+if (!window.dashboardLoaded) {
+    window.dashboardLoaded = true;
+
+    fetch("/forecast/")
+    .then(res => res.json())
+    .then(data => {
+
+        // ================= KPI =================
+        let currentStock = 0;
+
+        data.products_stock.forEach(p => {
+            Object.values(p.sizes).forEach(val => currentStock += val);
+        });
+
+        let next7DaysDemand = 0;
+
+        data.forecast_7_days.forEach(day => {
+            Object.values(day.mugs).forEach(size => {
+                next7DaysDemand += size.predicted_sales;
+            });
+        });
+
+        let riskLevel = "LOW";
+        if (currentStock < next7DaysDemand * 0.5) riskLevel = "HIGH";
+        else if (currentStock < next7DaysDemand) riskLevel = "MEDIUM";
+
+        document.getElementById("kpiStock").innerText = currentStock;
+        document.getElementById("kpiDemand").innerText = Math.round(next7DaysDemand);
+        document.getElementById("kpiRisk").innerText = riskLevel;
+        document.getElementById("kpiDecision").innerText =
+            riskLevel === "HIGH" ? "ORDER" : "HOLD";
+
+        // ================= ALERT =================
+        let alertHTML = "";
+
+        if (riskLevel === "HIGH") {
+            alertHTML = `
+            <div style="background:#ef4444;color:white;padding:15px;border-radius:10px;margin-bottom:20px;">
+                ⚠️ HIGH RISK: Stock will run out soon!
+            </div>`;
+        } else if (riskLevel === "MEDIUM") {
+            alertHTML = `
+            <div style="background:#f59e0b;color:black;padding:15px;border-radius:10px;margin-bottom:20px;">
+                ⚠️ MEDIUM RISK: Stock is getting low.
+            </div>`;
+        } else {
+            alertHTML = `
+            <div style="background:#22c55e;color:white;padding:15px;border-radius:10px;margin-bottom:20px;">
+                ✅ Stock level is healthy.
+            </div>`;
+        }
+
+        document.getElementById("alertBox").innerHTML = alertHTML;
+
+        // ================= CHART =================
+        function createChart(canvasId, dataset) {
+
+            if (!dataset || dataset.length === 0) return;
+
+            const labels = dataset.map(d => d.date);
+            const sizes = ['Small','Medium','Large'];
+
+            const datasets = sizes.map(size => ({
+                label: size,
+                data: dataset.map(d => d.mugs?.[size]?.predicted_sales || 0),
+                tension: 0.4
+            }));
+
+            new Chart(document.getElementById(canvasId), {
+                type: 'line',
+                data: { labels: labels, datasets: datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false   // 🔥 KEY FIX
+                }
+            });
+        }
+
+        createChart("chart7", data.forecast_7_days);
+        createChart("chart30", data.forecast_30_days);
+        createChart("chart365", data.forecast_365_days);
+
+    })
+    .catch(err => {
+        console.error("Error loading forecast:", err);
+    });
+}
+
+</script>
+
+{% endblock %}

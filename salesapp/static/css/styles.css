@@ -1,0 +1,32 @@
+body{
+    background-color:#354149;
+    color:#FEFEFA;
+}
+
+.card{
+
+    background-color:#2A3439;
+    color:#FEFEFA;
+}
+.topnav{
+    background-color:#2A3439;
+    color:#FEFEFA;
+}
+
+.nav-link:hover{
+    color:#FDEE00;
+}
+
+.my-btn {
+  background-color: #FDEE00;
+  color: #FEFEFA;
+  border: none;
+}
+.my-btn:hover {
+  background-color: #FFD700;
+  color: #FEFEFA;
+}
+
+.topnav .hover{
+    color:#FDEE00;
+}
