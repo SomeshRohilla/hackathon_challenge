@@ -34,7 +34,12 @@ def home(request):
 
 
 def stockedit(request):
-    return render(request, "stockedit.html")
+    context = {}
+    product = Product.objects.all()
+    context['product']=product
+    return render(request,'stockedit.html' , context)
+
+
 
 
 def aipredict(request):

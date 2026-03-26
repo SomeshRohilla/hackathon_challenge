@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <h1 class="text-center mb-4">Inventory</h1>
+    <div class="row g-3">
+        {% for product in product %}  
+        <div class="col">
+            <div class="card shadow-sm p-3 h-100">
+                <p class="mb-3">
+                    <p><strong>Product ID:</strong> {{ product.product_id}}</p>
+                    <p><strong>Department:</strong> {{ product.department}}</p>
+                    <p><strong>Stock:</strong> {{ product.current_stock}}</p>
+                </p>
+                <div class="mt-auto">
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
